@@ -1,0 +1,13 @@
+Classification Report - fused_model
+Generated: 2026-04-28 15:41:39.444318
+
+              precision    recall  f1-score   support
+
+        safe       0.99      1.00      1.00       157
+         wet       0.95      0.99      0.97        74
+         icy       0.00      0.00      0.00         3
+  storm_risk       1.00      0.98      0.99        66
+
+    accuracy                           0.98       300
+   macro avg       0.74      0.74      0.74       300
+weighted avg       0.97      0.98      0.98       300
