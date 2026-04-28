@@ -1,0 +1,10 @@
+matplotlib
+requests
+pandas
+opencv-python
+scikit-image
+scikit-learn
+NumPy
+SciPy
+seaborn
+Pillow

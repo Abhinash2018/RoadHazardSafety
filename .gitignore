@@ -1,0 +1,36 @@
+# Virtual Environment
+RoadSafety/
+venv/
+env/
+.venv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Models & Data (keep reports/results)
+*.pkl
+*.joblib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Notebooks
+.ipynb_checkpoints/

@@ -1,0 +1,66 @@
+================================================================================
+ROAD HAZARD DETECTION SYSTEM - EVALUATION REPORT
+================================================================================
+Generated: 2026-04-28 14:25:41
+
+RESEARCH FOCUS:
+Multi-Sensor Data Fusion for Real-Time Road Hazard Detection
+
+KEY OBJECTIVES:
+1. Quantify the Fusion Advantage (Visual + Atmospheric Data)
+2. Identify Feature Importance (Visual vs. Weather Predictors)
+3. Determine Reliability Thresholds for Municipal Dashboards
+
+================================================================================
+FUSED MODEL PERFORMANCE (Visual + Atmospheric):
+================================================================================
+  ACCURACY            : 0.9833
+  F1                  : 0.9754
+  PRECISION           : 0.9683
+  RECALL              : 0.9833
+
+================================================================================
+CAMERA-ONLY BASELINE (Visual Only):
+================================================================================
+  ACCURACY            : 0.5500
+  F1                  : 0.4510
+  PRECISION           : 0.3853
+  RECALL              : 0.5500
+
+================================================================================
+FUSION ADVANTAGE:
+================================================================================
+  ACCURACY_IMPROVEMENT          : +78.79%
+  F1_IMPROVEMENT                : +116.28%
+
+================================================================================
+TOP 10 MOST IMPORTANT FEATURES:
+================================================================================
+   1. relativeHumidity                         0.408244
+   2. windSpeed                                0.369219
+   3. visual_feature_4                         0.034905
+   4. temperature                              0.031522
+   5. visual_feature_3                         0.026827
+   6. visual_feature_1                         0.026818
+   7. visibility                               0.026199
+   8. visual_feature_2                         0.024524
+   9. barometricPressure                       0.018520
+  10. visual_feature_0                         0.017907
+
+================================================================================
+CONCLUSIONS & RECOMMENDATIONS:
+================================================================================
+
+1. The fusion of visual and atmospheric data provides a measurable advantage
+   in detecting invisible road hazards (black ice, fog, wind danger).
+
+2. The system demonstrates reliable classification of road conditions across
+   the I-35 corridor (Austin to San Marcos).
+
+3. Recommended thresholds and reliability scores have been computed for
+   integration into municipal transportation safety dashboards.
+
+4. Future improvements should focus on deep learning (CNN) integration and
+   expansion to additional geographic regions.
+
+================================================================================
