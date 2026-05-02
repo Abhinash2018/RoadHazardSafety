@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Safety - Road Hazard Detection System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-road"></i>
+                    <h1>Road Safety</h1>
+                    <p>Intelligent Road Hazard Detection System</p>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Location Overview -->
+            <section class="locations-section">
+                <h2>Monitored Locations</h2>
+                <div class="locations-grid" id="locationsGrid">
+                    <!-- Dynamically populated -->
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="actions-section">
+                <h2>Analysis Tools</h2>
+                <div class="actions-grid">
+                    <div class="action-card">
+                        <h3><i class="fas fa-image"></i> Upload Image</h3>
+                        <p>Analyze road conditions from a photo</p>
+                        <button class="btn btn-primary" onclick="openImageUpload()">Upload Image</button>
+                    </div>
+                    <div class="action-card">
+                        <h3><i class="fas fa-cloud"></i> Weather Analysis</h3>
+                        <p>Check hazard level based on weather</p>
+                        <button class="btn btn-primary" onclick="openWeatherAnalysis()">Analyze Weather</button>
+                    </div>
+                    <div class="action-card">
+                        <h3><i class="fas fa-chart-bar"></i> Historical Data</h3>
+                        <p>View trends and statistics</p>
+                        <button class="btn btn-primary" onclick="openHistoricalData()">View Data</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Latest Predictions -->
+            <section class="predictions-section">
+                <h2>Latest Predictions</h2>
+                <div class="predictions-list" id="predictionsList">
+                    <p class="empty-state">No predictions yet. Upload an image or enter weather data.</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Image Upload Modal -->
+        <div id="imageUploadModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('imageUploadModal')">&times;</span>
+                <h2>Analyze Road Conditions from Image</h2>
+                
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Drag and drop an image here or click to select</p>
+                    <input type="file" id="imageInput" accept="image/*" style="display:none;">
+                </div>
+
+                <div id="imagePreview" style="display:none; margin: 20px 0;">
+                    <img id="previewImg" src="" style="max-width: 100%; border-radius: 8px;">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="includeWeatherData"> Include Weather Data
+                    </label>
+                    <div id="weatherDataForm" style="display:none;">
+                        <div class="form-row">
+                            <input type="number" id="weatherTemp" placeholder="Temperature (°C)" step="0.1">
+                            <input type="number" id="weatherHumidity" placeholder="Humidity (%)" min="0" max="100" step="0.1">
+                        </div>
+                        <div class="form-row">
+                            <input type="number" id="weatherWindSpeed" placeholder="Wind Speed (km/h)" step="0.1">
+                            <input type="number" id="weatherVisibility" placeholder="Visibility (km)" step="0.1">
+                        </div>
+                        <div class="form-row">
+                            <input type="number" id="weatherDewpoint" placeholder="Dewpoint (°C)" step="0.1">
+                            <input type="number" id="weatherPressure" placeholder="Pressure (hPa)" step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-full" onclick="submitImagePrediction()">Analyze</button>
+                <div id="predictionResult" class="prediction-result" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Weather Analysis Modal -->
+        <div id="weatherModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('weatherModal')">&times;</span>
+                <h2>Weather-Based Hazard Analysis</h2>
+                
+                <div class="form-group">
+                    <label>Select Location:</label>
+                    <select id="weatherLocation">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <h3>Weather Conditions</h3>
+                    <div class="form-row">
+                        <input type="number" id="wTemp" placeholder="Temperature (°C)" step="0.1">
+                        <input type="number" id="wHumidity" placeholder="Humidity (%)" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="wWindSpeed" placeholder="Wind Speed (km/h)" step="0.1">
+                        <input type="number" id="wVisibility" placeholder="Visibility (km)" step="0.1">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="wDewpoint" placeholder="Dewpoint (°C)" step="0.1">
+                        <input type="number" id="wPressure" placeholder="Pressure (hPa)" step="0.1">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-full" onclick="submitWeatherPrediction()">Predict Hazard Level</button>
+                <div id="weatherPredictionResult" class="prediction-result" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Historical Data Modal -->
+        <div id="historicalModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('historicalModal')">&times;</span>
+                <h2>Historical Data & Statistics</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>Total Predictions</h4>
+                        <p class="stat-value" id="totalPredictions">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Safe Conditions</h4>
+                        <p class="stat-value" id="safePredictions">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Critical Alerts</h4>
+                        <p class="stat-value" id="criticalAlerts">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Avg. Confidence</h4>
+                        <p class="stat-value" id="avgConfidence">0%</p>
+                    </div>
+                </div>
+
+                <div class="chart-placeholder">
+                    <p><i class="fas fa-chart-line"></i> Chart visualization would display historical trends</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 Road Safety System. Powered by AI-driven hazard detection. | <a href="#" onclick="checkHealth()">System Status</a></p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

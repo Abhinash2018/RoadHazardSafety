@@ -8,3 +8,5 @@ NumPy
 SciPy
 seaborn
 Pillow
+Flask
+flask-cors
