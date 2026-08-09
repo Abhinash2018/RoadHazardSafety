@@ -18,9 +18,10 @@ from enum import Enum
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from src.config import HAZARD_CLASSES, TARGET_LOCATIONS
+from src.config import HAZARD_CLASSES, TARGET_LOCATIONS, MODELS_DIR
 from src.feature_extraction import VisualFeatureExtractor
 from src.model_trainer import RoadHazardClassifier
+from src.location_analysis import LocationAnalysisService
 
 # ============================================================================
 # Configuration & Enums
@@ -112,6 +113,12 @@ class ModelManager:
         try:
             self._logger.info("Initializing models...")
             self._classifier = RoadHazardClassifier()
+            model_path = Path(__file__).resolve().parent / MODELS_DIR / 'fused_model.pkl'
+            if not model_path.exists() or not self._classifier.load_model(str(model_path)):
+                self._logger.warning("Fused model not found or could not be loaded: %s", model_path)
+                self._classifier = None
+                self._visual_extractor = VisualFeatureExtractor()
+                return False
             self._visual_extractor = VisualFeatureExtractor()
             self._logger.info("✓ All models loaded successfully")
             return True
@@ -200,6 +207,11 @@ class PredictionService:
         except Exception as e:
             self._logger.error(f"Error in weather prediction: {e}")
             return {'success': False, 'error': str(e)}
+
+    def supports_weather_only(self) -> bool:
+        """Return whether the loaded classifier was trained on six weather features."""
+        classifier = self._model_manager.get_classifier()
+        return bool(classifier and getattr(classifier.model, 'n_features_in_', 0) == 6)
     
     def _make_prediction(
         self, 
@@ -322,6 +334,9 @@ class RoadSafetyApp:
         self._model_manager = ModelManager()
         self._prediction_service = PredictionService(self._model_manager)
         self._location_service = LocationService()
+        self._location_analysis_service = LocationAnalysisService(
+            self._prediction_service, self._location_service, WeatherData.from_dict
+        )
         self._health_service = SystemHealth(self._model_manager)
         
         # Register routes
@@ -341,6 +356,7 @@ class RoadSafetyApp:
         
         # API routes
         self.flask_app.route('/api/locations', methods=['GET'])(self._route_get_locations)
+        self.flask_app.route('/api/locations/<location_id>/analysis', methods=['GET'])(self._route_location_analysis)
         self.flask_app.route('/api/prediction', methods=['POST'])(self._route_predict)
         self.flask_app.route('/api/batch-prediction', methods=['POST'])(self._route_batch_predict)
         self.flask_app.route('/api/health', methods=['GET'])(self._route_health)
@@ -358,6 +374,13 @@ class RoadSafetyApp:
         """Get all monitored locations."""
         locations = self._location_service.get_all_locations()
         return jsonify(locations)
+
+    def _route_location_analysis(self, location_id: str):
+        """Return current weather and hazard analysis for one location."""
+        result = self._location_analysis_service.analyze(location_id)
+        if result is None:
+            return jsonify({'success': False, 'error': 'Unknown location'}), 404
+        return jsonify(result), 200 if result.get('success') else 503
     
     def _route_predict(self):
         """Handle single prediction request."""

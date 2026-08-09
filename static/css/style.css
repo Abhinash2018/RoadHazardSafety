@@ -163,6 +163,18 @@ section h2 {
     gap: 20px;
 }
 
+.analysis-explanation {
+    margin-top: 16px;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.analysis-source {
+    margin-top: 8px;
+    color: var(--gray-color);
+    font-size: 12px;
+}
+
 .location-card {
     border: 2px solid var(--border-color);
     border-radius: var(--border-radius);

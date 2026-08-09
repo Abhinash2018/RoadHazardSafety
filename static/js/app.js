@@ -90,13 +90,46 @@ function renderLocations() {
     if (!grid) return;
     
     grid.innerHTML = locations.map(location => `
-        <div class="location-card" onclick="simulateLocationPrediction('${location.id}')">
+        <div class="location-card" onclick="loadLocationAnalysis('${location.id}')">
             <h3><i class="fas fa-map-pin"></i> ${location.name}</h3>
             <p>Lat: ${location.latitude.toFixed(4)}<br>Lon: ${location.longitude.toFixed(4)}</p>
-            <span class="location-badge badge-safe">Not Analyzed</span>
-            <p style="font-size: 12px; margin-top: 10px; color: #999;">Click to analyze weather</p>
+            <span class="location-badge badge-safe">Analyze current conditions</span>
+            <p style="font-size: 12px; margin-top: 10px; color: #999;">Click for live local weather and risk</p>
         </div>
     `).join('');
+}
+
+async function loadLocationAnalysis(locationId) {
+    const panel = document.getElementById('liveAnalysis');
+    panel.className = 'prediction-result';
+    panel.innerHTML = '<p><span class="loading"></span> Fetching local conditions...</p>';
+    try {
+        const response = await fetch(`${API_BASE}/locations/${locationId}/analysis`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to analyze location');
+        const weather = data.weather;
+        const prediction = data.prediction;
+        const hazardColors = { safe: 'badge-safe', wet: 'badge-wet', snowy: 'badge-snowy', icy: 'badge-icy', storm_risk: 'badge-storm' };
+        panel.className = 'prediction-result success';
+        panel.innerHTML = `
+            <h3><i class="fas fa-location-crosshairs"></i> ${data.location.name}</h3>
+            <div class="result-grid">
+                <div class="result-item"><span class="result-label">Road risk:</span><span class="location-badge ${hazardColors[prediction.prediction] || 'badge-safe'}">${(prediction.prediction || 'unknown').toUpperCase()}</span></div>
+                <div class="result-item"><span class="result-label">Confidence:</span><span class="result-value">${prediction.confidence}%</span></div>
+                <div class="result-item"><span class="result-label">Temperature:</span><span class="result-value">${weather.temperature}°C</span></div>
+                <div class="result-item"><span class="result-label">Humidity:</span><span class="result-value">${weather.relativeHumidity}%</span></div>
+                <div class="result-item"><span class="result-label">Visibility:</span><span class="result-value">${weather.visibility.toFixed(1)} km</span></div>
+                <div class="result-item"><span class="result-label">Wind:</span><span class="result-value">${weather.windSpeed} km/h</span></div>
+            </div>
+            <p class="analysis-explanation">${data.analysis}</p>
+            <p class="analysis-source">Weather source: ${weather.source} | Updated: ${weather.observedAt || data.generatedAt}</p>
+            <p class="analysis-source">Camera: ${data.camera.source}${data.camera.available ? ` | <a href="${data.camera.imageUrl}" target="_blank" rel="noreferrer">Open live feed</a>` : ''}</p>
+        `;
+        addPrediction({ prediction: prediction.prediction, confidence: prediction.confidence, location: data.location.name, features_used: ['weather', 'location'] });
+    } catch (error) {
+        panel.className = 'prediction-result error';
+        panel.innerHTML = `<strong>Error:</strong> ${error.message}`;
+    }
 }
 
 function populateLocationSelects() {
