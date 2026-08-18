@@ -52,7 +52,7 @@ The Road Hazard Detection System is an intelligent platform that combines comput
 - **A short prediction trail** with confidence and timestamps.
 - **A health endpoint** so the dashboard can say whether its models are actually ready.
 
-Live camera feeds are optional. The repository does not ship real camera URLs, so the location panel will say `No live feed connected` until you provide one. Set a direct image URL before starting Flask:
+Live camera feeds come from the public DriveTexas/TxDOT camera table. The location panel looks up the nearest camera automatically. You can still override a location with a direct stream URL before starting Flask:
 
 ```powershell
 $env:CAMERA_FEED_AUSTIN_NORTH = "https://example.com/austin-north.jpg"

@@ -1,6 +1,8 @@
 """Live location analysis by combining local weather and camera metadata."""
 
 import logging
+import json
+import math
 import os
 import threading
 import time
@@ -9,7 +11,7 @@ from typing import Dict, Optional
 
 import requests
 
-from config import CAMERA_FEEDS, HAZARD_CLASSES, TARGET_LOCATIONS
+from config import CAMERA_FEEDS, HAZARD_CLASSES, TARGET_LOCATIONS, TXDOT_CAMERA_API, TXDOT_CAMERA_TABLE
 
 logger = logging.getLogger(__name__)
 
@@ -99,20 +101,93 @@ class LocationAnalysisService:
             "location": location,
             "weather": weather,
             "prediction": prediction,
-            "camera": self._camera_metadata(location["id"]),
+            "camera": self._camera_metadata(location),
             "analysis": self._explain(hazard, weather),
             "generatedAt": datetime.now(timezone.utc).isoformat(),
         }
 
-    def _camera_metadata(self, location_id: str) -> Dict:
-        """Expose a configured feed without inventing a camera URL."""
+    def _camera_metadata(self, location: Dict) -> Dict:
+        """Find the nearest official TxDOT camera, with env overrides for testing."""
+        location_id = location["id"]
         env_name = f"CAMERA_FEED_{location_id.upper()}"
-        image_url = os.getenv(env_name) or CAMERA_FEEDS.get(location_id)
+        configured_url = os.getenv(env_name) or CAMERA_FEEDS.get(location_id)
+        if configured_url:
+            return {
+                "available": True,
+                "imageUrl": configured_url,
+                "streamUrl": configured_url,
+                "source": "Configured camera feed",
+            }
+
+        try:
+            cameras = self._fetch_nearby_cameras(location)
+            if cameras:
+                camera = min(cameras, key=lambda item: self._distance_km(location, item))
+                stream_url = camera.get("httpsurl")
+                return {
+                    "available": bool(stream_url),
+                    "imageUrl": camera.get("imageurl"),
+                    "streamUrl": stream_url,
+                    "name": camera.get("name"),
+                    "description": camera.get("description"),
+                    "route": camera.get("route"),
+                    "source": "TxDOT / DriveTexas" if stream_url else "TxDOT camera found without stream",
+                }
+        except requests.RequestException as error:
+            logger.warning("TxDOT camera lookup failed for %s: %s", location_id, error)
+
         return {
-            "available": bool(image_url),
-            "imageUrl": image_url,
-            "source": "Live camera feed" if image_url else "No live feed connected",
+            "available": False,
+            "imageUrl": None,
+            "streamUrl": None,
+            "source": "No nearby TxDOT camera found",
         }
+
+    def _fetch_nearby_cameras(self, location: Dict) -> list:
+        """Query the public DriveTexas camera table around a monitored location."""
+        latitude = location["latitude"]
+        longitude = location["longitude"]
+        radius = 0.12
+        polygon = (
+            f"POLYGON(({longitude - radius} {latitude - radius},"
+            f"{longitude + radius} {latitude - radius},"
+            f"{longitude + radius} {latitude + radius},"
+            f"{longitude - radius} {latitude + radius},"
+            f"{longitude - radius} {latitude - radius}))"
+        )
+        query = {
+            "action": "table/query",
+            "query": {
+                "sqlselect": ["route", "description", "name", "httpsurl", "imageurl", "XY"],
+                "start": 0,
+                "table": TXDOT_CAMERA_TABLE,
+                "take": 50,
+                "where": [{"col": "XY", "test": "DWithin", "value": f"WKT({polygon}),COL(XY)"}],
+            },
+        }
+        response = self._session.get(
+            TXDOT_CAMERA_API, params={"request": json.dumps(query)}, timeout=10
+        )
+        response.raise_for_status()
+        data = response.json().get("data", {}).get("data", {})
+        if not data:
+            return []
+        keys = list(data)
+        return [dict(zip(keys, values)) for values in zip(*(data[key] for key in keys))]
+
+    @staticmethod
+    def _distance_km(location: Dict, camera: Dict) -> float:
+        """Approximate distance to a camera from its WKT POINT coordinate."""
+        point = camera.get("XY", "").replace("POINT (", "").rstrip(")").split()
+        if len(point) != 2:
+            return float("inf")
+        camera_lon, camera_lat = map(float, point)
+        latitude_delta = math.radians(camera_lat - location["latitude"])
+        longitude_delta = math.radians(camera_lon - location["longitude"])
+        average_latitude = math.radians((camera_lat + location["latitude"]) / 2)
+        return 6371 * math.sqrt(
+            latitude_delta ** 2 + (longitude_delta * math.cos(average_latitude)) ** 2
+        )
 
     @staticmethod
     def _explain(hazard: str, weather: Dict) -> str:

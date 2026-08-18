@@ -3,7 +3,8 @@ Configuration and constants for the Road Hazard Detection System
 """
 
 # API Endpoints
-TXDOT_CAMERA_API = "https://www.txdot.gov/api/cameras"  # Placeholder - replace with actual endpoint
+TXDOT_CAMERA_API = "https://dtx-e-cdn.maplarge.com/Api/ProcessDirect"
+TXDOT_CAMERA_TABLE = "appgeo/cameraPoint"
 NOAA_API_BASE = "https://api.weather.gov"
 
 # Data collection parameters

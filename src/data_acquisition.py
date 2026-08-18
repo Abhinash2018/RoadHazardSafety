@@ -45,25 +45,40 @@ class TxDOTCameraFetcher:
             List of image metadata with timestamps and URLs
         """
         try:
-            # This is a placeholder implementation
-            # In production, use actual TxDOT API authentication and endpoints
-            logger.info(f"Fetching {num_images} camera images from {location}")
+            coordinates = TARGET_LOCATIONS.get(location)
+            if not coordinates:
+                return []
 
-            # Placeholder response structure
-            images = []
-            for i in range(num_images):
-                timestamp = datetime.now() - timedelta(minutes=i * CAMERA_FETCH_INTERVAL_MINUTES)
-                images.append(
-                    {
-                        "location": location,
-                        "timestamp": timestamp,
-                        "image_url": f"https://placeholder.txdot.gov/camera_{location}_{i}.jpg",
-                        "camera_id": f"cam_{location}_{i}",
-                    }
-                )
+            latitude = coordinates["lat"]
+            longitude = coordinates["lon"]
+            radius = 0.12
+            polygon = (
+                f"POLYGON(({longitude - radius} {latitude - radius},"
+                f"{longitude + radius} {latitude - radius},"
+                f"{longitude + radius} {latitude + radius},"
+                f"{longitude - radius} {latitude + radius},"
+                f"{longitude - radius} {latitude - radius}))"
+            )
+            query = {
+                "action": "table/query",
+                "query": {
+                    "sqlselect": ["route", "description", "name", "httpsurl", "imageurl", "XY"],
+                    "start": 0,
+                    "table": "appgeo/cameraPoint",
+                    "take": num_images,
+                    "where": [{"col": "XY", "test": "DWithin", "value": f"WKT({polygon}),COL(XY)"}],
+                },
+            }
+            response = self.session.get(
+                self.api_endpoint, params={"request": json.dumps(query)}, timeout=10
+            )
+            response.raise_for_status()
+            data = response.json().get("data", {}).get("data", {})
+            if not data:
+                return []
 
-            logger.info(f"Successfully fetched {len(images)} images")
-            return images
+            keys = list(data)
+            return [dict(zip(keys, values)) for values in zip(*(data[key] for key in keys))]
 
         except Exception as e:
             logger.error(f"Error fetching TxDOT images: {e}")
