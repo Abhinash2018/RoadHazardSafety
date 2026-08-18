@@ -17,6 +17,10 @@ TARGET_LOCATIONS = {
     "san_marcos": {"lat": 29.8833, "lon": -97.9414},
 }
 
+# Optional live image feeds for the location panel. Set these to direct image
+# URLs in the environment as CAMERA_FEED_AUSTIN_NORTH, for example.
+CAMERA_FEEDS = {}
+
 # Weather features to extract from NOAA
 WEATHER_FEATURES = [
     "dewpoint",

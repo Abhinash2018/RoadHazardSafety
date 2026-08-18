@@ -52,6 +52,17 @@ The Road Hazard Detection System is an intelligent platform that combines comput
 - **A short prediction trail** with confidence and timestamps.
 - **A health endpoint** so the dashboard can say whether its models are actually ready.
 
+Live camera feeds are optional. The repository does not ship real camera URLs, so the location panel will say `No live feed connected` until you provide one. Set a direct image URL before starting Flask:
+
+```powershell
+$env:CAMERA_FEED_AUSTIN_NORTH = "https://example.com/austin-north.jpg"
+$env:CAMERA_FEED_AUSTIN_SOUTH = "https://example.com/austin-south.jpg"
+$env:CAMERA_FEED_SAN_MARCOS = "https://example.com/san-marcos.jpg"
+python app.py
+```
+
+The image upload workflow does not depend on these feeds; it uses the camera-only model with any road image you provide.
+
 ## System Architecture
 
 ```

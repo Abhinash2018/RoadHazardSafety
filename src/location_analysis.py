@@ -9,7 +9,7 @@ from typing import Dict, Optional
 
 import requests
 
-from config import HAZARD_CLASSES, TARGET_LOCATIONS
+from config import CAMERA_FEEDS, HAZARD_CLASSES, TARGET_LOCATIONS
 
 logger = logging.getLogger(__name__)
 
@@ -107,11 +107,11 @@ class LocationAnalysisService:
     def _camera_metadata(self, location_id: str) -> Dict:
         """Expose a configured feed without inventing a camera URL."""
         env_name = f"CAMERA_FEED_{location_id.upper()}"
-        image_url = os.getenv(env_name)
+        image_url = os.getenv(env_name) or CAMERA_FEEDS.get(location_id)
         return {
             "available": bool(image_url),
             "imageUrl": image_url,
-            "source": "Configured camera feed" if image_url else "Not configured",
+            "source": "Live camera feed" if image_url else "No live feed connected",
         }
 
     @staticmethod
@@ -171,5 +171,5 @@ class LocationAnalysisService:
             "location": location,
             "error": "Live weather is temporarily unavailable.",
             "detail": error,
-            "camera": {"available": False, "imageUrl": None, "source": "Not configured"},
+            "camera": {"available": False, "imageUrl": None, "source": "No live feed connected"},
         }

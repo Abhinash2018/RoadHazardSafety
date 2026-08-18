@@ -145,7 +145,7 @@ async function loadLocationAnalysis(locationId) {
             </div>
             <p class="analysis-explanation">${data.analysis}</p>
             <p class="analysis-source">Weather source: ${weather.source} | Updated: ${weather.observedAt || data.generatedAt}</p>
-            <p class="analysis-source">Camera: ${data.camera.source}${data.camera.available ? ` | <a href="${data.camera.imageUrl}" target="_blank" rel="noreferrer">Open live feed</a>` : ''}</p>
+            <p class="analysis-source">Camera: ${data.camera.source}${data.camera.available ? ` | <a href="${data.camera.imageUrl}" target="_blank" rel="noreferrer">Open live feed</a>` : ' | Upload a road photo above for camera-based analysis.'}</p>
         `;
         addPrediction({ prediction: prediction.prediction, confidence: prediction.confidence, location: data.location.name, features_used: ['weather', 'location'] });
     } catch (error) {
