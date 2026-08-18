@@ -1,13 +1,14 @@
 # Road Safety - Web Dashboard
 
-A modern web application for the Road Hazard Detection System that enables users to analyze road conditions using machine learning.
+The dashboard is the hands-on part of Road Safety: a small Flask app for checking a road photo, trying a set of weather conditions, or asking what is happening at one of the monitored I-35 locations.
 
 ## Features
 
 - **Real-time Hazard Detection**: Upload road images or provide weather data to get instant hazard predictions
 - **Multi-location Monitoring**: Track road conditions across the I-35 corridor (Austin North, Austin South, San Marcos)
-- **Fused Model Predictions**: Combine visual features (from images) with weather data for better accuracy
-- **Interactive Dashboard**: Beautiful, responsive interface with live system status monitoring
+- **Fused Model Predictions**: Combine visual features (from images) with weather data
+- **Weather-only Predictions**: Make a real model-backed call when there is no image
+- **Interactive Dashboard**: A responsive field-notes style interface with live system status
 - **Prediction History**: View recent predictions and confidence scores
 - **Historical Analytics**: Track statistics and trends over time
 
@@ -64,11 +65,11 @@ You'll see the Road Safety Dashboard with:
 1. Click **"Weather Analysis"** in the Analysis Tools section
 2. Select a monitored location
 3. Enter weather conditions:
-   - Temperature (°C)
+  - Temperature (°F)
    - Humidity (%)
    - Wind Speed (km/h)
-   - Visibility (km)
-   - Dewpoint (°C)
+  - Visibility (miles)
+  - Dewpoint (°F)
    - Barometric Pressure (hPa)
 4. Click **"Predict Hazard Level"**
 5. View the predicted road condition and confidence

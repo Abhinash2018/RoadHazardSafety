@@ -1,13 +1,15 @@
-# 🛣️ Road Hazard Detection System
+# Road Hazard Detection System
 
-A comprehensive machine learning system for detecting and predicting road hazards using real-time camera imagery and weather data along the I-35 corridor (Austin to San Marcos, Texas).
+This project started with a practical question: when the road looks questionable, can a camera and a weather report make a useful first call? It watches a small stretch of I-35 between Austin and San Marcos and combines those two signals into a readable hazard prediction.
+
+It is a working research/demo system, not a replacement for a road crew or a driver's judgment. The interesting part is the handoff between the image model, the weather model, and the small Flask dashboard that lets you see what each one contributed.
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Flask](https://img.shields.io/badge/Flask-Web%20App-red)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-yellow)
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
@@ -24,32 +26,31 @@ A comprehensive machine learning system for detecting and predicting road hazard
 
 The Road Hazard Detection System is an intelligent platform that combines computer vision and weather data to identify hazardous road conditions in real-time. The system continuously monitors road conditions across multiple locations and provides predictions for five hazard categories: **safe**, **wet**, **snowy**, **icy**, and **storm risk**.
 
-### Key Capabilities
+### What It Does
 
-- 🎥 **Visual Analysis**: Processes camera images to extract visual features indicative of road conditions
-- 🌦️ **Weather Integration**: Incorporates real-time weather data (humidity, temperature, pressure, visibility, wind speed)
-- 🤖 **Dual Model Architecture**: Operates both camera-only and fused (visual + weather) models for flexible predictions
-- 📊 **Interactive Dashboard**: Web-based interface for hazard analysis and historical tracking
-- 🎯 **Confidence Scoring**: Provides probability estimates for each hazard classification
+- **Looks at road images** and extracts a compact set of visual features.
+- **Reads atmospheric conditions** including humidity, temperature, pressure, visibility, and wind.
+- **Chooses the right model for the evidence available**: camera-only, weather-only, or fused image-plus-weather analysis.
+- **Shows probabilities rather than pretending certainty.** The displayed confidence comes from the selected model's class probabilities.
+- **Keeps the browser language familiar:** temperature is entered in Fahrenheit and visibility in miles, then converted to the training units behind the scenes.
 
 ## Features
 
 ### Core ML Features
-- **Multi-modal Learning**: Combines visual features from road images with meteorological data
-- **Camera-Only Analysis**: Standalone predictions from road imagery
-- **Fused Model Predictions**: Enhanced accuracy by combining visual and weather features
-- **Confidence Scoring**: Probabilistic predictions for decision-making
+- **Camera-only analysis** for a quick read from a road image.
+- **Weather-only analysis** for conditions when no image is available.
+- **Fused analysis** when both image and weather evidence are present.
+- **Five labels:** safe, wet, snowy, icy, and storm risk.
 
-### Web Dashboard Features
-- **Real-time Hazard Detection**: Upload images or input weather conditions for instant analysis
-- **Multi-location Monitoring**: Track 3 key locations along the I-35 corridor:
+### Dashboard Features
+- **Image and weather checks** from one small dashboard.
+- **Three monitored locations** along the I-35 corridor:
   - Austin North
   - Austin South
   - San Marcos
-- **Interactive Maps**: Visualize monitored locations and their current conditions
-- **Prediction History**: Review recent predictions with confidence scores and timestamps
-- **System Status**: Monitor active models and system health
-- **Weather Conditions Input**: Manually enter weather parameters for prediction
+- **Live weather lookups** through Open-Meteo.
+- **A short prediction trail** with confidence and timestamps.
+- **A health endpoint** so the dashboard can say whether its models are actually ready.
 
 ## System Architecture
 

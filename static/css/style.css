@@ -9,21 +9,22 @@
 }
 
 :root {
-    --primary-color: #2563eb;
-    --secondary-color: #1e40af;
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --dark-color: #1f2937;
-    --light-color: #f9fafb;
-    --gray-color: #6b7280;
-    --border-color: #e5e7eb;
+    --primary-color: #d85b35;
+    --secondary-color: #943b2c;
+    --success-color: #2f8060;
+    --warning-color: #c88628;
+    --danger-color: #b94238;
+    --dark-color: #20252b;
+    --light-color: #f7f3eb;
+    --gray-color: #6f716d;
+    --border-color: #d8d1c4;
     
-    --safe-color: #10b981;
-    --wet-color: #3b82f6;
-    --snowy-color: #a78bfa;
-    --icy-color: #60a5fa;
-    --storm-color: #ef4444;
+    --safe-color: #2f8060;
+    --wet-color: #477b91;
+    --snowy-color: #657994;
+    --icy-color: #4c8297;
+    --storm-color: #b94238;
+    --unsure-color: #c88628;
     
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -34,8 +35,8 @@
 
 html, body {
     height: 100%;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Trebuchet MS', 'Avenir Next', sans-serif;
+    background: linear-gradient(135deg, #e8dfd1 0%, #f7f3eb 52%, #dfe8e0 100%);
     color: var(--dark-color);
 }
 
@@ -51,7 +52,7 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     width: 100%;
-    padding: 20px;
+    padding: 28px;
 }
 
 /* ============================================
@@ -59,7 +60,7 @@ body {
    ============================================ */
 
 .header {
-    background: white;
+    background: var(--dark-color);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-lg);
     margin-bottom: 30px;
@@ -67,7 +68,7 @@ body {
 }
 
 .header-content {
-    padding: 40px;
+    padding: 34px 40px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -81,19 +82,31 @@ body {
 
 .logo i {
     font-size: 48px;
-    color: var(--primary-color);
+    color: #f0a45b;
 }
 
 .logo h1 {
     font-size: 32px;
-    color: var(--dark-color);
+    color: #fffaf1;
     margin: 0;
 }
 
 .logo p {
     font-size: 14px;
-    color: var(--gray-color);
+    color: #c4c0b5;
     margin: 0;
+}
+
+.logo .eyebrow {
+    color: #f0a45b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin-bottom: 5px;
+}
+
+.logo h1 + p {
+    margin-top: 4px;
 }
 
 .status-indicator {
@@ -101,7 +114,7 @@ body {
     align-items: center;
     gap: 10px;
     font-size: 14px;
-    color: var(--gray-color);
+    color: #d8d1c4;
 }
 
 .status-dot {
@@ -138,10 +151,11 @@ body {
 
 /* Section Styles */
 section {
-    background: white;
+    background: rgba(255, 252, 246, 0.88);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-lg);
     padding: 30px;
+    border: 1px solid rgba(32, 37, 43, 0.08);
 }
 
 section h2 {
@@ -181,13 +195,15 @@ section h2 {
     padding: 20px;
     cursor: pointer;
     transition: var(--transition);
-    text-align: center;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.42);
 }
 
 .location-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
     border-color: var(--primary-color);
+    background: #fffaf1;
 }
 
 .location-card h3 {
@@ -216,6 +232,8 @@ section h2 {
 .badge-snowy { background: var(--snowy-color); }
 .badge-icy { background: var(--icy-color); }
 .badge-storm { background: var(--storm-color); }
+.badge-risk { background: var(--storm-color); }
+.badge-unsure { background: var(--unsure-color); }
 
 /* ============================================
    Actions Grid
