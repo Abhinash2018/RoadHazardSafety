@@ -81,7 +81,7 @@ class PredictionResult:
     
     def to_dict(self) -> Dict:
         """Convert to dictionary for JSON serialization."""
-        return {
+        return {  
             'success': True,
             'hazard_class': self.hazard_class,
             'prediction': self.hazard_label,
@@ -100,35 +100,67 @@ class ModelManager:
     
     def __init__(self):
         self._classifier: Optional[RoadHazardClassifier] = None
+        self._camera_classifier: Optional[RoadHazardClassifier] = None
+        self._weather_classifier: Optional[RoadHazardClassifier] = None
         self._visual_extractor: Optional[VisualFeatureExtractor] = None
         self._logger = logging.getLogger(__name__)
     
     @property
     def is_ready(self) -> bool:
-        """Check if all models are loaded."""
-        return self._classifier is not None and self._visual_extractor is not None
+        """Check if any usable model is loaded."""
+        return (self._classifier is not None or self._camera_classifier is not None) and self._visual_extractor is not None
     
     def initialize(self) -> bool:
         """Load trained models at startup."""
         try:
             self._logger.info("Initializing models...")
-            self._classifier = RoadHazardClassifier()
-            model_path = Path(__file__).resolve().parent / MODELS_DIR / 'fused_model.pkl'
-            if not model_path.exists() or not self._classifier.load_model(str(model_path)):
-                self._logger.warning("Fused model not found or could not be loaded: %s", model_path)
-                self._classifier = None
-                self._visual_extractor = VisualFeatureExtractor()
-                return False
             self._visual_extractor = VisualFeatureExtractor()
-            self._logger.info("✓ All models loaded successfully")
+
+            fused_model_path = Path(__file__).resolve().parent / MODELS_DIR / 'fused_model.pkl'
+            self._classifier = RoadHazardClassifier()
+            if fused_model_path.exists() and self._classifier.load_model(str(fused_model_path)):
+                self._logger.info("✓ Fused model loaded successfully: %s", fused_model_path)
+            else:
+                self._logger.warning("Fused model not found or could not be loaded: %s", fused_model_path)
+                self._classifier = None
+
+            camera_model_path = Path(__file__).resolve().parent / MODELS_DIR / 'camera_only_model.pkl'
+            self._camera_classifier = RoadHazardClassifier()
+            if camera_model_path.exists() and self._camera_classifier.load_model(str(camera_model_path)):
+                self._logger.info("✓ Camera-only model loaded successfully: %s", camera_model_path)
+            else:
+                self._logger.warning("Camera-only model not found or could not be loaded: %s", camera_model_path)
+                self._camera_classifier = None
+
+            weather_model_path = Path(__file__).resolve().parent / MODELS_DIR / 'weather_only_model.pkl'
+            self._weather_classifier = RoadHazardClassifier()
+            if weather_model_path.exists() and self._weather_classifier.load_model(str(weather_model_path)):
+                self._logger.info("✓ Weather-only model loaded successfully: %s", weather_model_path)
+            else:
+                self._logger.warning("Weather-only model not found or could not be loaded: %s", weather_model_path)
+                self._weather_classifier = None
+
+            if self._classifier is None and self._camera_classifier is None:
+                self._logger.warning("No usable model was loaded.")
+                return False
+
+            self._logger.info("✓ Model initialization complete")
             return True
         except Exception as e:
             self._logger.error(f"✗ Error loading models: {e}")
             return False
     
     def get_classifier(self) -> Optional[RoadHazardClassifier]:
-        """Get the hazard classifier model."""
+        """Get the fused model for weather-assisted predictions."""
         return self._classifier
+
+    def get_camera_classifier(self) -> Optional[RoadHazardClassifier]:
+        """Get the camera-only model for image-only predictions."""
+        return self._camera_classifier
+
+    def get_weather_classifier(self) -> Optional[RoadHazardClassifier]:
+        """Get the weather-only model for weather-only predictions."""
+        return self._weather_classifier
     
     def get_visual_extractor(self) -> Optional[VisualFeatureExtractor]:
         """Get the visual feature extractor."""
@@ -145,6 +177,9 @@ class PredictionService:
     def predict_from_image(self, image_file, weather_data: Optional[WeatherData] = None) -> Dict:
         """
         Make a prediction from an image with optional weather data.
+        
+        For image-only requests, the camera-only model is selected automatically so
+        users do not need to manually provide weather values.
         
         Args:
             image_file: File-like object containing the image
@@ -173,23 +208,51 @@ class PredictionService:
             if weather_data:
                 features_used.append('weather')
                 weather_features = weather_data.to_array()
-            
-            # Make prediction
-            if visual_features is not None or weather_features is not None:
-                return self._make_prediction(
-                    visual_features, 
-                    weather_features, 
-                    features_used
-                )
-            else:
+
+            if visual_features is None and weather_features is None:
                 return {
                     'success': False,
                     'error': 'No valid features provided'
                 }
+
+            classifier = self._select_classifier(
+                use_weather=weather_data is not None,
+                use_visual=visual_features is not None
+            )
+            if classifier is None:
+                return {
+                    'success': False,
+                    'error': 'No usable prediction model available'
+                }
+
+            return self._make_prediction(
+                visual_features,
+                weather_features,
+                features_used,
+                classifier=classifier
+            )
         
         except Exception as e:
             self._logger.error(f"Unexpected error in prediction: {e}")
             return {'success': False, 'error': str(e)}
+
+    def _select_classifier(self, use_weather: bool, use_visual: bool) -> Optional[RoadHazardClassifier]:
+        """Choose a model whose feature set matches the supplied inputs."""
+        if use_weather and use_visual:
+            classifier = self._model_manager.get_classifier()
+            if classifier is not None:
+                return classifier
+
+        if use_weather:
+            classifier = self._model_manager.get_weather_classifier()
+            if classifier is not None:
+                return classifier
+
+        camera_classifier = self._model_manager.get_camera_classifier()
+        if camera_classifier is not None:
+            return camera_classifier
+
+        return self._model_manager.get_classifier()
     
     def predict_from_weather(self, weather_data: WeatherData) -> Dict:
         """
@@ -217,7 +280,8 @@ class PredictionService:
         self, 
         visual_features: Optional[np.ndarray],
         weather_features: Optional[np.ndarray],
-        features_used: List[str]
+        features_used: List[str],
+        classifier: Optional[RoadHazardClassifier] = None
     ) -> Dict:
         """
         Internal method to make predictions using available features.
@@ -226,22 +290,48 @@ class PredictionService:
             visual_features: Visual features from image (optional)
             weather_features: Weather features (optional)
             features_used: List of feature types used
+            classifier: Explicit model to use for this prediction
         
         Returns:
             Dictionary with prediction results
         """
-        classifier = self._model_manager.get_classifier()
+        if classifier is None:
+            if visual_features is not None and weather_features is None:
+                classifier = self._model_manager.get_camera_classifier()
+            elif visual_features is None and weather_features is not None:
+                classifier = self._model_manager.get_weather_classifier()
+            else:
+                classifier = self._model_manager.get_classifier()
         if not classifier:
             return {'success': False, 'error': 'Model not available'}
         
         try:
-            # Combine features appropriately
+            expected_features = getattr(classifier.model, 'n_features_in_', None)
+
             if visual_features is not None and weather_features is not None:
                 features = np.hstack([visual_features.reshape(1, -1), weather_features])
             elif visual_features is not None:
                 features = visual_features.reshape(1, -1)
             else:
                 features = weather_features
+
+            if expected_features is not None and features.shape[1] != expected_features:
+                camera_classifier = self._model_manager.get_camera_classifier()
+                if camera_classifier is not None and visual_features is not None and weather_features is None:
+                    self._logger.warning(
+                        "Fused model selected but image-only input was provided; falling back to camera-only model."
+                    )
+                    classifier = camera_classifier
+                    features = visual_features.reshape(1, -1)
+                    features_used = ['visual']
+                    expected_features = getattr(classifier.model, 'n_features_in_', None)
+                    if expected_features is not None and features.shape[1] != expected_features:
+                        return {'success': False, 'error': 'Image features do not match the loaded camera-only model dimensions'}
+                else:
+                    return {
+                        'success': False,
+                        'error': f'Feature count mismatch for selected model: expected {expected_features}, received {features.shape[1]}'
+                    }
             
             # Get prediction
             prediction = classifier.predict(features)
@@ -249,20 +339,33 @@ class PredictionService:
             
             hazard_class = int(prediction[0])
             max_confidence = float(np.max(confidence_scores[0]))
-            
+            class_labels = getattr(classifier.model, 'classes_', [])
+            confidence_by_label = {}
+            for index, class_value in enumerate(class_labels):
+                label = HAZARD_CLASSES.get(int(class_value), 'unknown')
+                confidence_by_label[label] = round(float(confidence_scores[0][index]) * 100, 2)
+
+            # Confidence override rules:
+            # - below 40% => mark as risk
+            # - below 60% => mark as unsure
+            # - otherwise use the model's predicted hazard label
+            if max_confidence < 0.40:
+                hazard_label = 'risk'
+            elif max_confidence < 0.60:
+                hazard_label = 'Unsure'
+            else:
+                hazard_label = HAZARD_CLASSES.get(hazard_class, 'unknown')
+
             result = PredictionResult(
                 hazard_class=hazard_class,
-                hazard_label=HAZARD_CLASSES.get(hazard_class, 'unknown'),
+                hazard_label=hazard_label,
                 confidence=max_confidence,
-                confidence_scores={
-                    HAZARD_CLASSES[i]: round(float(confidence_scores[0][i]) * 100, 2)
-                    for i in range(len(HAZARD_CLASSES))
-                },
+                confidence_scores=confidence_by_label,
                 features_used=features_used
             )
             
             self._logger.info(
-                f"✓ Prediction: {result.hazard_label} ({result.confidence * 100:.1f}%)"
+                f"Prediction: {result.hazard_label} ({result.confidence * 100:.1f}%)"
             )
             return result.to_dict()
         
