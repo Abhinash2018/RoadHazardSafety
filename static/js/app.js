@@ -6,6 +6,7 @@ const API_BASE = 'http://localhost:5000/api';
 let locations = [];
 let predictions = [];
 let selectedImage = null;
+let activeCameraPlayer = null;
 
 function fahrenheitToCelsius(value) {
     return (value - 32) * 5 / 9;
@@ -145,7 +146,7 @@ async function loadLocationAnalysis(locationId) {
             </div>
             <p class="analysis-explanation">${data.analysis}</p>
             <p class="analysis-source">Weather source: ${weather.source} | Updated: ${weather.observedAt || data.generatedAt}</p>
-            <p class="analysis-source">Camera: ${data.camera.source}${data.camera.available ? ` | <a href="${data.camera.streamUrl}" target="_blank" rel="noreferrer">Watch live stream</a>` : ' | Upload a road photo above for camera-based analysis.'}</p>
+            <p class="analysis-source">Camera: ${data.camera.source}${data.camera.available ? ` | <a href="#" onclick="openCamera('${encodeURIComponent(data.camera.streamUrl)}', '${encodeURIComponent(data.camera.name || data.location.name)}'); return false;">Watch live stream</a>` : ' | Upload a road photo above for camera-based analysis.'}</p>
         `;
         addPrediction({ prediction: prediction.prediction, confidence: prediction.confidence, location: data.location.name, features_used: ['weather', 'location'] });
     } catch (error) {
@@ -511,6 +512,49 @@ function openHistoricalData() {
 
 function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
+    if (modalId === 'cameraModal' && activeCameraPlayer) {
+        activeCameraPlayer.destroy();
+        activeCameraPlayer = null;
+        document.getElementById('cameraPlayer').removeAttribute('src');
+        document.getElementById('cameraPlayer').load();
+    }
+}
+
+function openCamera(encodedStreamUrl, encodedName) {
+    const streamUrl = decodeURIComponent(encodedStreamUrl);
+    const name = decodeURIComponent(encodedName);
+    const modal = document.getElementById('cameraModal');
+    const player = document.getElementById('cameraPlayer');
+    const status = document.getElementById('cameraStatus');
+    const fallback = document.getElementById('cameraFallbackLink');
+    document.getElementById('cameraTitle').textContent = `${name} / live TxDOT feed`;
+    fallback.href = 'https://drivetexas.org';
+    status.textContent = 'Connecting to DriveTexas...';
+    modal.style.display = 'block';
+
+    if (activeCameraPlayer) {
+        activeCameraPlayer.destroy();
+        activeCameraPlayer = null;
+    }
+
+    if (player.canPlayType('application/vnd.apple.mpegurl')) {
+        player.src = streamUrl;
+        player.play().catch(() => {});
+        status.textContent = 'Live feed loaded.';
+    } else if (window.Hls && Hls.isSupported()) {
+        activeCameraPlayer = new Hls({ enableWorker: true });
+        activeCameraPlayer.loadSource(streamUrl);
+        activeCameraPlayer.attachMedia(player);
+        activeCameraPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
+            status.textContent = 'Live feed loaded.';
+            player.play().catch(() => {});
+        });
+        activeCameraPlayer.on(Hls.Events.ERROR, (_, event) => {
+            if (event.fatal) status.textContent = 'This feed is unavailable right now. Try the DriveTexas map below.';
+        });
+    } else {
+        status.textContent = 'This browser cannot play HLS directly. Use the DriveTexas map below.';
+    }
 }
 
 /* ============================================

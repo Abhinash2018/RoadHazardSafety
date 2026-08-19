@@ -273,7 +273,7 @@ class PredictionService:
 
     def supports_weather_only(self) -> bool:
         """Return whether the loaded classifier was trained on six weather features."""
-        classifier = self._model_manager.get_classifier()
+        classifier = self._model_manager.get_weather_classifier()
         return bool(classifier and getattr(classifier.model, 'n_features_in_', 0) == 6)
     
     def _make_prediction(
@@ -555,7 +555,7 @@ class RoadSafetyApp:
         self._logger.info("=" * 80)
         success = self._model_manager.initialize()
         if success:
-            self._logger.info(f"✓ Application ready at http://localhost:5000")
+            self._logger.info(f"Application ready at http://localhost:5000")
         else:
             self._logger.warning("⚠ Application running but models not loaded")
         return success
