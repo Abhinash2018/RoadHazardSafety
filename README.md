@@ -49,6 +49,8 @@ The Road Hazard Detection System is an intelligent platform that combines comput
   - Austin South
   - San Marcos
 - **Live weather lookups** through Open-Meteo.
+- **Nearest-camera lookup** through the public DriveTexas/TxDOT camera table.
+- **In-page HLS playback** for live camera streams, with a DriveTexas fallback link when a feed is unavailable.
 - **A short prediction trail** with confidence and timestamps.
 - **A health endpoint** so the dashboard can say whether its models are actually ready.
 
@@ -69,7 +71,7 @@ The image upload workflow does not depend on these feeds; it uses the camera-onl
 ┌─────────────────────────────────────────────────────────────┐
 │                     Input Sources                            │
 │  ┌──────────────────┐         ┌──────────────────────┐      │
-│  │  TxDOT Cameras   │         │  NOAA Weather API    │      │
+│  │  TxDOT Cameras   │         │  Open-Meteo Weather  │      │
 │  └──────────────────┘         └──────────────────────┘      │
 └────────────────┬────────────────────────────────┬────────────┘
                  │                                │
@@ -91,6 +93,7 @@ The image upload workflow does not depend on these feeds; it uses the camera-onl
                  │  ┌────────────────────────────────┐ │
                  │  │  RandomForest (Fused)          │ │
                  │  │  RandomForest (Camera-Only)    │ │
+                 │  │  RandomForest (Weather-Only)   │ │
                  │  └────────────────────────────────┘ │
                  └──────────────┬──────────────────────┘
                                 │

@@ -8,7 +8,8 @@ The dashboard is the hands-on part of Road Safety: a small Flask app for checkin
 - **Multi-location Monitoring**: Track road conditions across the I-35 corridor (Austin North, Austin South, San Marcos)
 - **Fused Model Predictions**: Combine visual features (from images) with weather data
 - **Weather-only Predictions**: Make a real model-backed call when there is no image
-- **Interactive Dashboard**: A responsive field-notes style interface with live system status
+- **Interactive Dashboard**: A responsive field-notes style interface with model status
+- **Live TxDOT Cameras**: Automatically find the nearest DriveTexas camera and play its HLS stream in the dashboard
 - **Prediction History**: View recent predictions and confidence scores
 - **Historical Analytics**: Track statistics and trends over time
 
@@ -46,6 +47,7 @@ Navigate to: **http://localhost:5000**
 
 You'll see the Road Safety Dashboard with:
 - Location monitoring cards
+- Live weather and nearby TxDOT camera links
 - Image upload tool
 - Weather analysis tool
 - Prediction history
@@ -73,6 +75,15 @@ You'll see the Road Safety Dashboard with:
    - Barometric Pressure (hPa)
 4. Click **"Predict Hazard Level"**
 5. View the predicted road condition and confidence
+
+### 3. Watch a Traffic Camera
+
+1. Click a monitored location.
+2. Wait for the weather and camera details to load.
+3. Select **"Watch live stream"**.
+4. The dashboard opens the TxDOT HLS feed in a video player. If a camera is temporarily offline, use the **DriveTexas camera map** link instead.
+
+Temperature is entered in Fahrenheit and visibility in miles. The dashboard converts those values to the units expected by the trained models.
 
 ### 3. View Statistics
 
