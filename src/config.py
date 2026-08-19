@@ -3,7 +3,8 @@ Configuration and constants for the Road Hazard Detection System
 """
 
 # API Endpoints
-TXDOT_CAMERA_API = "https://www.txdot.gov/api/cameras"  # Placeholder - replace with actual endpoint
+TXDOT_CAMERA_API = "https://dtx-e-cdn.maplarge.com/Api/ProcessDirect"
+TXDOT_CAMERA_TABLE = "appgeo/cameraPoint"
 NOAA_API_BASE = "https://api.weather.gov"
 
 # Data collection parameters
@@ -16,6 +17,10 @@ TARGET_LOCATIONS = {
     "austin_south": {"lat": 30.2671, "lon": -97.7430},
     "san_marcos": {"lat": 29.8833, "lon": -97.9414},
 }
+
+# Optional live image feeds for the location panel. Set these to direct image
+# URLs in the environment as CAMERA_FEED_AUSTIN_NORTH, for example.
+CAMERA_FEEDS = {}
 
 # Weather features to extract from NOAA
 WEATHER_FEATURES = [

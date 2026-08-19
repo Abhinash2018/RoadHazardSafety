@@ -14,8 +14,11 @@
             <div class="header-content">
                 <div class="logo">
                     <i class="fas fa-road"></i>
-                    <h1>Road Safety</h1>
-                    <p>Intelligent Road Hazard Detection System</p>
+                    <div>
+                        <p class="eyebrow">FIELD NOTES / I-35 CORRIDOR</p>
+                        <h1>Road Safety</h1>
+                        <p>Weather, pavement, and a second set of eyes.</p>
+                    </div>
                 </div>
                 <div class="status-indicator">
                     <span class="status-dot" id="statusDot"></span>
@@ -28,42 +31,42 @@
         <main class="main-content">
             <!-- Location Overview -->
             <section class="locations-section">
-                <h2>Monitored Locations</h2>
+                <h2>Along the route</h2>
                 <div class="locations-grid" id="locationsGrid">
                     <!-- Dynamically populated -->
                 </div>
             </section>
 
             <section class="live-analysis-section">
-                <h2>Live Location Analysis</h2>
-                <div id="liveAnalysis" class="empty-state">Select a monitored location to fetch current local conditions.</div>
+                <h2>What is happening out there?</h2>
+                <div id="liveAnalysis" class="empty-state">Pick a location and we will check its latest conditions.</div>
             </section>
 
             <!-- Quick Actions -->
             <section class="actions-section">
-                <h2>Analysis Tools</h2>
+                <h2>Take a closer look</h2>
                 <div class="actions-grid">
                     <div class="action-card">
                         <h3><i class="fas fa-image"></i> Upload Image</h3>
-                        <p>Analyze road conditions from a photo</p>
-                        <button class="btn btn-primary" onclick="openImageUpload()">Upload Image</button>
+                        <p>Have a road photo? Let the camera model weigh in.</p>
+                        <button class="btn btn-primary" onclick="openImageUpload()">Use a photo</button>
                     </div>
                     <div class="action-card">
                         <h3><i class="fas fa-cloud"></i> Weather Analysis</h3>
-                        <p>Check hazard level based on weather</p>
-                        <button class="btn btn-primary" onclick="openWeatherAnalysis()">Analyze Weather</button>
+                        <p>Temperature, wind, and visibility can change the call.</p>
+                        <button class="btn btn-primary" onclick="openWeatherAnalysis()">Enter weather</button>
                     </div>
                     <div class="action-card">
                         <h3><i class="fas fa-chart-bar"></i> Historical Data</h3>
-                        <p>View trends and statistics</p>
-                        <button class="btn btn-primary" onclick="openHistoricalData()">View Data</button>
+                        <p>Keep an eye on the predictions made this session.</p>
+                        <button class="btn btn-primary" onclick="openHistoricalData()">See the trail</button>
                     </div>
                 </div>
             </section>
 
             <!-- Latest Predictions -->
             <section class="predictions-section">
-                <h2>Latest Predictions</h2>
+                <h2>Recent calls</h2>
                 <div class="predictions-list" id="predictionsList">
                     <p class="empty-state">No predictions yet. Upload an image or enter weather data.</p>
                 </div>
@@ -92,15 +95,15 @@
                     </label>
                     <div id="weatherDataForm" style="display:none;">
                         <div class="form-row">
-                            <input type="number" id="weatherTemp" placeholder="Temperature (°C)" step="0.1">
+                            <input type="number" id="weatherTemp" placeholder="Temperature (°F)" step="0.1">
                             <input type="number" id="weatherHumidity" placeholder="Humidity (%)" min="0" max="100" step="0.1">
                         </div>
                         <div class="form-row">
                             <input type="number" id="weatherWindSpeed" placeholder="Wind Speed (km/h)" step="0.1">
-                            <input type="number" id="weatherVisibility" placeholder="Visibility (km)" step="0.1">
+                            <input type="number" id="weatherVisibility" placeholder="Visibility (miles)" step="0.1">
                         </div>
                         <div class="form-row">
-                            <input type="number" id="weatherDewpoint" placeholder="Dewpoint (°C)" step="0.1">
+                            <input type="number" id="weatherDewpoint" placeholder="Dewpoint (°F)" step="0.1">
                             <input type="number" id="weatherPressure" placeholder="Pressure (hPa)" step="0.1">
                         </div>
                     </div>
@@ -127,21 +130,32 @@
                 <div class="form-group">
                     <h3>Weather Conditions</h3>
                     <div class="form-row">
-                        <input type="number" id="wTemp" placeholder="Temperature (°C)" step="0.1">
+                        <input type="number" id="wTemp" placeholder="Temperature (°F)" step="0.1">
                         <input type="number" id="wHumidity" placeholder="Humidity (%)" min="0" max="100" step="0.1">
                     </div>
                     <div class="form-row">
                         <input type="number" id="wWindSpeed" placeholder="Wind Speed (km/h)" step="0.1">
-                        <input type="number" id="wVisibility" placeholder="Visibility (km)" step="0.1">
+                        <input type="number" id="wVisibility" placeholder="Visibility (miles)" step="0.1">
                     </div>
                     <div class="form-row">
-                        <input type="number" id="wDewpoint" placeholder="Dewpoint (°C)" step="0.1">
+                        <input type="number" id="wDewpoint" placeholder="Dewpoint (°F)" step="0.1">
                         <input type="number" id="wPressure" placeholder="Pressure (hPa)" step="0.1">
                     </div>
                 </div>
 
                 <button class="btn btn-primary btn-full" onclick="submitWeatherPrediction()">Predict Hazard Level</button>
                 <div id="weatherPredictionResult" class="prediction-result" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Live Camera Modal -->
+        <div id="cameraModal" class="modal">
+            <div class="modal-content camera-modal-content">
+                <span class="close" onclick="closeModal('cameraModal')">&times;</span>
+                <h2 id="cameraTitle">Live TxDOT camera</h2>
+                <video id="cameraPlayer" controls autoplay muted playsinline></video>
+                <p id="cameraStatus" class="analysis-source">Connecting to DriveTexas...</p>
+                <p class="analysis-source"><a id="cameraFallbackLink" href="https://drivetexas.org" target="_blank" rel="noreferrer">Open DriveTexas camera map</a></p>
             </div>
         </div>
 
@@ -177,11 +191,7 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <p>&copy; 2026 Road Safety System. Powered by AI-driven hazard detection. | <a href="#" onclick="checkHealth()">System Status</a></p>
-    </footer>
-
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

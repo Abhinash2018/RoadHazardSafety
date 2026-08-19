@@ -2,10 +2,33 @@
    Road Safety Dashboard - JavaScript
    ============================================ */
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = `${window.location.origin}/api`;
 let locations = [];
 let predictions = [];
 let selectedImage = null;
+let activeCameraPlayer = null;
+
+function fahrenheitToCelsius(value) {
+    return (value - 32) * 5 / 9;
+}
+
+function milesToKilometers(value) {
+    return value * 1.609344;
+}
+
+function readWeatherData(prefix) {
+    const temperature = parseFloat(document.getElementById(`${prefix}Temp`).value);
+    const dewpoint = parseFloat(document.getElementById(`${prefix}Dewpoint`).value);
+    const visibility = parseFloat(document.getElementById(`${prefix}Visibility`).value);
+    return {
+        temperature: fahrenheitToCelsius(Number.isFinite(temperature) ? temperature : 68),
+        relativeHumidity: parseFloat(document.getElementById(`${prefix}Humidity`).value) || 60,
+        windSpeed: parseFloat(document.getElementById(`${prefix}WindSpeed`).value) || 10,
+        visibility: milesToKilometers(Number.isFinite(visibility) ? visibility : 6.2),
+        dewpoint: fahrenheitToCelsius(Number.isFinite(dewpoint) ? dewpoint : 50),
+        barometricPressure: parseFloat(document.getElementById(`${prefix}Pressure`).value) || 1013
+    };
+}
 
 /* ============================================
    Initialization
@@ -116,14 +139,14 @@ async function loadLocationAnalysis(locationId) {
             <div class="result-grid">
                 <div class="result-item"><span class="result-label">Road risk:</span><span class="location-badge ${hazardColors[prediction.prediction] || 'badge-safe'}">${(prediction.prediction || 'unknown').toUpperCase()}</span></div>
                 <div class="result-item"><span class="result-label">Confidence:</span><span class="result-value">${prediction.confidence}%</span></div>
-                <div class="result-item"><span class="result-label">Temperature:</span><span class="result-value">${weather.temperature}°C</span></div>
+                <div class="result-item"><span class="result-label">Temperature:</span><span class="result-value">${(weather.temperature * 9 / 5 + 32).toFixed(1)}°F</span></div>
                 <div class="result-item"><span class="result-label">Humidity:</span><span class="result-value">${weather.relativeHumidity}%</span></div>
-                <div class="result-item"><span class="result-label">Visibility:</span><span class="result-value">${weather.visibility.toFixed(1)} km</span></div>
+                <div class="result-item"><span class="result-label">Visibility:</span><span class="result-value">${(weather.visibility / 1.609344).toFixed(1)} miles</span></div>
                 <div class="result-item"><span class="result-label">Wind:</span><span class="result-value">${weather.windSpeed} km/h</span></div>
             </div>
             <p class="analysis-explanation">${data.analysis}</p>
             <p class="analysis-source">Weather source: ${weather.source} | Updated: ${weather.observedAt || data.generatedAt}</p>
-            <p class="analysis-source">Camera: ${data.camera.source}${data.camera.available ? ` | <a href="${data.camera.imageUrl}" target="_blank" rel="noreferrer">Open live feed</a>` : ''}</p>
+            <p class="analysis-source">Camera: ${data.camera.source}${data.camera.available ? ` | <a href="#" onclick="openCamera('${encodeURIComponent(data.camera.streamUrl)}', '${encodeURIComponent(data.camera.name || data.location.name)}'); return false;">Watch live stream</a>` : ' | Upload a road photo above for camera-based analysis.'}</p>
         `;
         addPrediction({ prediction: prediction.prediction, confidence: prediction.confidence, location: data.location.name, features_used: ['weather', 'location'] });
     } catch (error) {
@@ -223,14 +246,7 @@ async function submitImagePrediction() {
         }
         
         if (document.getElementById('includeWeatherData').checked) {
-            const weatherData = {
-                temperature: parseFloat(document.getElementById('weatherTemp').value) || 20,
-                relativeHumidity: parseFloat(document.getElementById('weatherHumidity').value) || 60,
-                windSpeed: parseFloat(document.getElementById('weatherWindSpeed').value) || 10,
-                visibility: parseFloat(document.getElementById('weatherVisibility').value) || 10,
-                dewpoint: parseFloat(document.getElementById('weatherDewpoint').value) || 10,
-                barometricPressure: parseFloat(document.getElementById('weatherPressure').value) || 1013
-            };
+            const weatherData = readWeatherData('weather');
             formData.append('weather_data', JSON.stringify(weatherData));
         }
         
@@ -262,8 +278,11 @@ function displayImagePredictionResult(data) {
             'wet': 'badge-wet',
             'snowy': 'badge-snowy',
             'icy': 'badge-icy',
-            'storm_risk': 'badge-storm'
+            'storm_risk': 'badge-storm',
+            'risk': 'badge-risk',
+            'unsure': 'badge-unsure'
         };
+        const hazardKey = String(data.prediction || 'unknown').toLowerCase();
         
         resultDiv.className = 'prediction-result success';
         resultDiv.innerHTML = `
@@ -271,7 +290,7 @@ function displayImagePredictionResult(data) {
             <div class="result-grid">
                 <div class="result-item">
                     <span class="result-label">Road Condition:</span>
-                    <span class="location-badge ${hazardColors[data.prediction]}">${data.prediction.toUpperCase()}</span>
+                    <span class="location-badge ${hazardColors[hazardKey] || 'badge-safe'}">${(data.prediction || 'unknown').toUpperCase()}</span>
                 </div>
                 <div class="result-item">
                     <span class="result-label">Confidence:</span>
@@ -308,14 +327,7 @@ function displayImagePredictionResult(data) {
 
 async function submitWeatherPrediction() {
     const location = document.getElementById('weatherLocation').value;
-    const weatherData = {
-        temperature: parseFloat(document.getElementById('wTemp').value) || 20,
-        relativeHumidity: parseFloat(document.getElementById('wHumidity').value) || 60,
-        windSpeed: parseFloat(document.getElementById('wWindSpeed').value) || 10,
-        visibility: parseFloat(document.getElementById('wVisibility').value) || 10,
-        dewpoint: parseFloat(document.getElementById('wDewpoint').value) || 10,
-        barometricPressure: parseFloat(document.getElementById('wPressure').value) || 1013
-    };
+    const weatherData = readWeatherData('w');
     
     const resultDiv = document.getElementById('weatherPredictionResult');
     resultDiv.style.display = 'block';
@@ -344,8 +356,11 @@ async function submitWeatherPrediction() {
                 'wet': 'badge-wet',
                 'snowy': 'badge-snowy',
                 'icy': 'badge-icy',
-                'storm_risk': 'badge-storm'
+                'storm_risk': 'badge-storm',
+                'risk': 'badge-risk',
+                'unsure': 'badge-unsure'
             };
+            const hazardKey = String(pred.prediction || 'unknown').toLowerCase();
             
             resultDiv.className = 'prediction-result success';
             resultDiv.innerHTML = `
@@ -357,7 +372,7 @@ async function submitWeatherPrediction() {
                     </div>
                     <div class="result-item">
                         <span class="result-label">Predicted Condition:</span>
-                        <span class="location-badge ${hazardColors[pred.prediction]}">${pred.prediction.toUpperCase()}</span>
+                        <span class="location-badge ${hazardColors[hazardKey] || 'badge-safe'}">${(pred.prediction || 'unknown').toUpperCase()}</span>
                     </div>
                     <div class="result-item">
                         <span class="result-label">Confidence:</span>
@@ -366,8 +381,8 @@ async function submitWeatherPrediction() {
                 </div>
                 <div style="margin-top: 15px; padding: 10px; background: white; border-radius: 4px; font-size: 13px;">
                     <p><strong>Weather Conditions:</strong></p>
-                    <p>Temperature: ${weatherData.temperature}°C | Humidity: ${weatherData.relativeHumidity}%</p>
-                    <p>Wind: ${weatherData.windSpeed} km/h | Visibility: ${weatherData.visibility} km</p>
+                    <p>Temperature: ${(weatherData.temperature * 9 / 5 + 32).toFixed(1)}°F | Humidity: ${weatherData.relativeHumidity}%</p>
+                    <p>Wind: ${weatherData.windSpeed} km/h | Visibility: ${(weatherData.visibility / 1.609344).toFixed(1)} miles</p>
                 </div>
             `;
             
@@ -419,13 +434,16 @@ function renderPredictions() {
         'wet': 'badge-wet',
         'snowy': 'badge-snowy',
         'icy': 'badge-icy',
-        'storm_risk': 'badge-storm'
+        'storm_risk': 'badge-storm',
+        'risk': 'badge-risk',
+        'unsure': 'badge-unsure'
     };
     
     list.innerHTML = predictions.map(pred => {
         const hazardLabel = typeof pred.hazard_class === 'string' ? 
             pred.hazard_class : 
             ['safe', 'wet', 'snowy', 'icy', 'storm_risk'][pred.hazard_class] || 'unknown';
+        const hazardKey = String(hazardLabel || 'unknown').toLowerCase();
         
         return `
             <div class="prediction-item">
@@ -435,7 +453,7 @@ function renderPredictions() {
                     <p><strong>Features:</strong> ${pred.features ? pred.features.join(', ') : 'weather'}</p>
                 </div>
                 <div class="prediction-badge">
-                    <span class="prediction-class ${hazardColors[hazardLabel]}">${hazardLabel}</span>
+                    <span class="prediction-class ${hazardColors[hazardKey] || 'badge-safe'}">${hazardLabel}</span>
                     <span class="confidence">${pred.confidence}%</span>
                 </div>
             </div>
@@ -494,6 +512,59 @@ function openHistoricalData() {
 
 function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
+    if (modalId === 'cameraModal' && activeCameraPlayer) {
+        activeCameraPlayer.destroy();
+        activeCameraPlayer = null;
+        document.getElementById('cameraPlayer').removeAttribute('src');
+        document.getElementById('cameraPlayer').load();
+    }
+}
+
+function openCamera(encodedStreamUrl, encodedName) {
+    const streamUrl = decodeURIComponent(encodedStreamUrl);
+    const name = decodeURIComponent(encodedName);
+    const modal = document.getElementById('cameraModal');
+    const player = document.getElementById('cameraPlayer');
+    const status = document.getElementById('cameraStatus');
+    const fallback = document.getElementById('cameraFallbackLink');
+    document.getElementById('cameraTitle').textContent = `${name} / live TxDOT feed`;
+    fallback.href = streamUrl || 'https://drivetexas.org';
+    fallback.textContent = streamUrl ? 'Open stream directly' : 'Open DriveTexas camera map';
+    status.textContent = 'Connecting to DriveTexas...';
+    modal.style.display = 'block';
+
+    if (!streamUrl) {
+        status.textContent = 'No playable stream was provided for this camera.';
+        return;
+    }
+
+    if (activeCameraPlayer) {
+        activeCameraPlayer.destroy();
+        activeCameraPlayer = null;
+    }
+
+    if (player.canPlayType('application/vnd.apple.mpegurl')) {
+        player.src = streamUrl;
+        player.play().catch(() => {});
+        status.textContent = 'Live feed loaded.';
+    } else if (window.Hls && Hls.isSupported()) {
+        activeCameraPlayer = new Hls({ enableWorker: true });
+        activeCameraPlayer.loadSource(streamUrl);
+        activeCameraPlayer.attachMedia(player);
+        activeCameraPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
+            status.textContent = 'Live feed loaded.';
+            player.play().catch(() => {});
+        });
+        activeCameraPlayer.on(Hls.Events.ERROR, (_, event) => {
+            if (event.fatal) {
+                status.textContent = 'This feed is unavailable right now. Open the stream directly or try the DriveTexas map.';
+                fallback.href = 'https://drivetexas.org';
+                fallback.textContent = 'Open DriveTexas camera map';
+            }
+        });
+    } else {
+        status.textContent = 'This browser cannot play HLS directly. Use the DriveTexas map below.';
+    }
 }
 
 /* ============================================

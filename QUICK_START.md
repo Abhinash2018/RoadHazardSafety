@@ -74,11 +74,11 @@ Then open your browser and go to: **http://localhost:5000**
 2. Click **"Weather Analysis"** button
 3. Select "Austin North" location
 4. Fill in weather data:
-   - Temperature: 5°C
+  - Temperature: 41°F
    - Humidity: 80%
    - Wind Speed: 30 km/h
-   - Visibility: 2 km
-   - Dewpoint: 2°C
+  - Visibility: 1.2 miles
+  - Dewpoint: 36°F
    - Pressure: 1010 hPa
 5. Click **"Predict Hazard Level"**
 6. You should see a prediction (likely "icy" or "storm_risk" for this weather)

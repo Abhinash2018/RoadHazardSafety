@@ -159,6 +159,10 @@ def run_pipeline():
         logger.info("✓ Model training and comparison complete")
         comparator.print_comparison_report()
 
+        weather_model = RoadHazardClassifier()
+        weather_model.train(X_weather, y, feature_names=weather_features)
+        logger.info("✓ Weather-only model training complete")
+
     except Exception as e:
         logger.error(f"✗ Model training failed: {e}")
         return
@@ -210,6 +214,7 @@ def run_pipeline():
         os.makedirs(MODELS_DIR, exist_ok=True)
         comparator.fused_model.save_model(os.path.join(MODELS_DIR, 'fused_model.pkl'))
         comparator.camera_only_model.save_model(os.path.join(MODELS_DIR, 'camera_only_model.pkl'))
+        weather_model.save_model(os.path.join(MODELS_DIR, 'weather_only_model.pkl'))
 
         # Generate summary report
         reporter.generate_summary_report(
