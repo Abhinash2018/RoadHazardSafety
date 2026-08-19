@@ -65,6 +65,17 @@ python app.py
 
 The image upload workflow does not depend on these feeds; it uses the camera-only model with any road image you provide.
 
+### Live Camera Troubleshooting
+
+The dashboard displays remote TxDOT/DriveTexas HLS streams. It does not request access to the computer's built-in webcam. Click a location, then choose **Watch live stream** to open the feed.
+
+If the video area is blank:
+
+- Confirm Flask is running and open the dashboard from the same URL that started the server, normally `http://localhost:5000`.
+- Use **Open stream directly** in the camera dialog to test the feed outside the embedded player.
+- If the stream is temporarily unavailable or the browser does not support HLS, use the **DriveTexas camera map** fallback.
+- Browser camera permissions are not involved because these are public remote streams.
+
 ## System Architecture
 
 ```

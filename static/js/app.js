@@ -2,7 +2,7 @@
    Road Safety Dashboard - JavaScript
    ============================================ */
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = `${window.location.origin}/api`;
 let locations = [];
 let predictions = [];
 let selectedImage = null;
@@ -528,9 +528,15 @@ function openCamera(encodedStreamUrl, encodedName) {
     const status = document.getElementById('cameraStatus');
     const fallback = document.getElementById('cameraFallbackLink');
     document.getElementById('cameraTitle').textContent = `${name} / live TxDOT feed`;
-    fallback.href = 'https://drivetexas.org';
+    fallback.href = streamUrl || 'https://drivetexas.org';
+    fallback.textContent = streamUrl ? 'Open stream directly' : 'Open DriveTexas camera map';
     status.textContent = 'Connecting to DriveTexas...';
     modal.style.display = 'block';
+
+    if (!streamUrl) {
+        status.textContent = 'No playable stream was provided for this camera.';
+        return;
+    }
 
     if (activeCameraPlayer) {
         activeCameraPlayer.destroy();
@@ -550,7 +556,11 @@ function openCamera(encodedStreamUrl, encodedName) {
             player.play().catch(() => {});
         });
         activeCameraPlayer.on(Hls.Events.ERROR, (_, event) => {
-            if (event.fatal) status.textContent = 'This feed is unavailable right now. Try the DriveTexas map below.';
+            if (event.fatal) {
+                status.textContent = 'This feed is unavailable right now. Open the stream directly or try the DriveTexas map.';
+                fallback.href = 'https://drivetexas.org';
+                fallback.textContent = 'Open DriveTexas camera map';
+            }
         });
     } else {
         status.textContent = 'This browser cannot play HLS directly. Use the DriveTexas map below.';
